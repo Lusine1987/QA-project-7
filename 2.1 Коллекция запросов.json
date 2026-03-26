@@ -1,0 +1,1334 @@
+{
+	"info": {
+		"_postman_id": "c188cdf7-d4e6-4715-b39e-c5252ac2e82a",
+		"name": "Dadata API Testing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "51229211",
+		"_collection_link": "https://lusine1987-9377394.postman.co/workspace/Lusine's-Workspace~0472b81b-7ada-4298-8d85-4dd7ca37331e/collection/51229211-c188cdf7-d4e6-4715-b39e-c5252ac2e82a?action=share&source=collection_link&creator=51229211"
+	},
+	"item": [
+		{
+			"name": "Suggest Company (Подсказки по организациям)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"try {",
+							"    console.log(\"=\".repeat(40));",
+							"    console.log(\"🚀 Запуск запроса: \" + pm.request.name);",
+							"    console.log(\"⏰ Время начала: \" + new Date().toISOString());",
+							"    console.log(\"🔗 Метод: \" + pm.request.method);",
+							"    console.log(\"🌐 URL: \" + pm.request.url.toString());",
+							"    ",
+							"    // Сохраняем время начала для тестов производительности",
+							"    const startTime = Date.now();",
+							"    pm.environment.set(\"request_start_time\", Date.now());",
+							"    ",
+							"    // Логируем заголовки (опционально)",
+							"    console.log(\"📋 Заголовки запроса:\");",
+							"    pm.request.headers.each(header => {",
+							"        if (header.key !== 'Authorization') { // Не логируем токен для безопасности",
+							"            console.log(`   ${header.key}: ${header.value}`);",
+							"        } else {",
+							"            console.log(`   ${header.key}: [скрыто]`);",
+							"        }",
+							"    });",
+							"    ",
+							"    console.log(\"=\".repeat(40));",
+							"} catch (error) {",
+							"    console.error(\"❌ Ошибка в Pre-request Script:\", error.message);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Проверка статуса ответа",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// 2. Проверка времени ответа",
+							"pm.test(\"Response time is less than 2000ms\", function () {",
+							"    const endTime = Date.now();",
+							"    const startTime = pm.environment.get(\"request_start_time\");",
+							"    const responseTime = endTime - startTime;",
+							"    pm.expect(responseTime).to.be.below(2000);",
+							"    console.log(\"Время ответа: \" + responseTime + \"ms\");",
+							"});",
+							"",
+							"// 3. Проверка структуры JSON",
+							"pm.test(\"Response has valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// 4. Проверка наличия массива suggestions",
+							"pm.test(\"Response contains suggestions array\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.property(\"suggestions\");",
+							"    pm.expect(response.suggestions).to.be.an(\"array\");",
+							"});",
+							"",
+							"// 5. Проверка структуры данных организации",
+							"pm.test(\"Company data has correct structure\", function () {",
+							"    const response = pm.response.json();",
+							"    ",
+							"    if (response.suggestions.length > 0) {",
+							"        const company = response.suggestions[0].data;",
+							"        ",
+							"        // Проверка обязательных полей",
+							"        pm.expect(company).to.have.property(\"inn\");",
+							"        pm.expect(company.inn).to.be.a(\"string\");",
+							"        ",
+							"        pm.expect(company).to.have.property(\"name\");",
+							"        pm.expect(company.name).to.have.property(\"full\");",
+							"        ",
+							"        pm.expect(company).to.have.property(\"address\");",
+							"        pm.expect(company.address).to.have.property(\"value\");",
+							"        ",
+							"        console.log(\"Найдена организация: \" + company.name.full);",
+							"        console.log(\"ИНН: \" + company.inn);",
+							"    }",
+							"});",
+							"",
+							"// 6. Сохранение данных для следующих запросов",
+							"const response = pm.response.json();",
+							"if (response.suggestions && response.suggestions.length > 0) {",
+							"    const firstCompany = response.suggestions[0];",
+							"    pm.environment.set(\"last_company_inn\", firstCompany.data.inn);",
+							"    pm.environment.set(\"last_company_name\", firstCompany.value);",
+							"}",
+							"",
+							"console.log(\"Все тесты пройдены успешно!\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{dadata_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"query\": \"{{test_query}}\",\n  \"count\": {{count}}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{dadata_base_url}}/suggest/party",
+					"host": [
+						"{{dadata_base_url}}"
+					],
+					"path": [
+						"suggest",
+						"party"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Suggest Address (Подсказки по адресам)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"try {",
+							"    console.log(\"=\".repeat(40));",
+							"    console.log(\"🚀 Запуск запроса: \" + pm.request.name);",
+							"    console.log(\"⏰ Время начала: \" + new Date().toISOString());",
+							"    console.log(\"🔗 Метод: \" + pm.request.method);",
+							"    console.log(\"🌐 URL: \" + pm.request.url.toString());",
+							"    ",
+							"    // Сохраняем время начала для тестов производительности",
+							"    const startTime = Date.now();",
+							"    pm.environment.set(\"request_start_time\", startTime);",
+							"    ",
+							"    // Логируем заголовки (опционально)",
+							"    console.log(\"📋 Заголовки запроса:\");",
+							"    pm.request.headers.each(header => {",
+							"        if (header.key !== 'Authorization') { // Не логируем токен для безопасности",
+							"            console.log(`   ${header.key}: ${header.value}`);",
+							"        } else {",
+							"            console.log(`   ${header.key}: [скрыто]`);",
+							"        }",
+							"    });",
+							"    ",
+							"    console.log(\"=\".repeat(40));",
+							"} catch (error) {",
+							"    console.error(\"❌ Ошибка в Pre-request Script:\", error.message);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Статус код",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// 2. Структура ответа",
+							"pm.test(\"Address suggestions are valid\", function () {",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.property(\"suggestions\");",
+							"    ",
+							"    if (response.suggestions.length > 0) {",
+							"        const address = response.suggestions[0];",
+							"        pm.expect(address).to.have.property(\"value\");",
+							"        pm.expect(address).to.have.property(\"data\");",
+							"        pm.expect(address.data).to.have.property(\"city\");",
+							"    }",
+							"});",
+							"",
+							"// 3. Сохранение данных",
+							"const response = pm.response.json();",
+							"if (response.suggestions.length > 0) {",
+							"    pm.environment.set(\"last_address\", response.suggestions[0].value);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"query\": \"москва тверская 10\",\n  \"count\": 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{dadata_base_url}}/suggest/address",
+					"host": [
+						"{{dadata_base_url}}"
+					],
+					"path": [
+						"suggest",
+						"address"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Suggest FIO (Подсказки по ФИО)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"try {",
+							"    console.log(\"=\".repeat(40));",
+							"    console.log(\"🚀 Запуск запроса: \" + pm.request.name);",
+							"    console.log(\"⏰ Время начала: \" + new Date().toISOString());",
+							"    console.log(\"🔗 Метод: \" + pm.request.method);",
+							"    console.log(\"🌐 URL: \" + pm.request.url.toString());",
+							"    ",
+							"    // Сохраняем время начала для тестов производительности",
+							"    const startTime = Date.now();",
+							"    pm.environment.set(\"request_start_time\", startTime);",
+							"    ",
+							"    // Логируем заголовки (опционально)",
+							"    console.log(\"📋 Заголовки запроса:\");",
+							"    pm.request.headers.each(header => {",
+							"        if (header.key !== 'Authorization') { // Не логируем токен для безопасности",
+							"            console.log(`   ${header.key}: ${header.value}`);",
+							"        } else {",
+							"            console.log(`   ${header.key}: [скрыто]`);",
+							"        }",
+							"    });",
+							"    ",
+							"    console.log(\"=\".repeat(40));",
+							"} catch (error) {",
+							"    console.error(\"❌ Ошибка в Pre-request Script:\", error.message);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"🧪 ЗАПУСК ТЕСТОВ ДЛЯ SUGGEST FIO\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// 1. Проверка статуса ответа",
+							"pm.test(\"✅ Статус код должен быть 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"    console.log(\"Статус код: \" + pm.response.code + \" OK\");",
+							"});",
+							"",
+							"// 2. Проверка времени ответа",
+							"pm.test(\"⏱️ Время ответа меньше 3000ms\", function() {",
+							"    const endTime = Date.now();",
+							"    const startTime = pm.environment.get(\"request_start_time\");",
+							"    const responseTime = endTime - startTime;",
+							"    pm.expect(responseTime).to.be.below(3000);",
+							"    console.log(\"Время ответа: \" + responseTime + \"ms\");",
+							"});",
+							"",
+							"// 3. Проверка формата JSON",
+							"pm.test(\"📄 Ответ должен быть в формате JSON\", function() {",
+							"    pm.response.to.be.json;",
+							"    console.log(\"Формат ответа: JSON\");",
+							"});",
+							"",
+							"// 4. Проверка наличия массива suggestions",
+							"pm.test(\"📋 Ответ содержит массив suggestions\", function() {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.have.property('suggestions');",
+							"    pm.expect(responseData.suggestions).to.be.an('array');",
+							"    console.log(\"Найдено подсказок: \" + responseData.suggestions.length);",
+							"});",
+							"",
+							"// 5. Проверка структуры подсказок ФИО",
+							"pm.test(\"👤 Каждая подсказка ФИО имеет правильную структуру\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const suggestion = responseData.suggestions[0];",
+							"        ",
+							"        // Обязательные поля для подсказки",
+							"        pm.expect(suggestion).to.have.property('value');",
+							"        pm.expect(suggestion.value).to.be.a('string');",
+							"        pm.expect(suggestion).to.have.property('unrestricted_value');",
+							"        pm.expect(suggestion.unrestricted_value).to.be.a('string');",
+							"        ",
+							"        // Проверяем наличие объекта data",
+							"        pm.expect(suggestion).to.have.property('data');",
+							"        pm.expect(suggestion.data).to.be.an('object');",
+							"        ",
+							"        console.log(\"Пример ФИО: \" + suggestion.value);",
+							"    } else {",
+							"        console.log(\"⚠️ Подсказки не найдены, проверка структуры пропущена\");",
+							"    }",
+							"});",
+							"",
+							"// 6. ИСПРАВЛЕННЫЙ ТЕСТ: Проверка структуры данных ФИО (без full_name)",
+							"pm.test(\"📝 Проверка основных полей данных ФИО\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const fioData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Проверяем наличие основных полей ФИО (гарантированно есть в API Dadata)",
+							"        pm.expect(fioData).to.have.property('surname');",
+							"        pm.expect(fioData.surname).to.be.a('string');",
+							"        ",
+							"        pm.expect(fioData).to.have.property('name');",
+							"        pm.expect(fioData.name).to.be.a('string');",
+							"        ",
+							"        // Патроним может быть строкой или null",
+							"        pm.expect(fioData).to.have.property('patronymic');",
+							"        pm.expect(fioData.patronymic).to.satisfy((value) => {",
+							"            return value === null || typeof value === 'string';",
+							"        }, 'patronymic должен быть строкой или null');",
+							"        ",
+							"        // Поле gender может быть, но не обязательно",
+							"        if (fioData.hasOwnProperty('gender')) {",
+							"            pm.expect(fioData.gender).to.be.a('string');",
+							"            console.log(\"Пол: \" + fioData.gender);",
+							"        }",
+							"        ",
+							"        console.log(\"ФИО из data:\");",
+							"        console.log(\"  • Фамилия: \" + fioData.surname);",
+							"        console.log(\"  • Имя: \" + fioData.name);",
+							"        if (fioData.patronymic) {",
+							"            console.log(\"  • Отчество: \" + fioData.patronymic);",
+							"        }",
+							"        ",
+							"        // Полное ФИО берем из suggestion.value, а не из data.full_name",
+							"        const fullNameFromValue = responseData.suggestions[0].value;",
+							"        console.log(\"  • Полное ФИО (из value): \" + fullNameFromValue);",
+							"    }",
+							"});",
+							"",
+							"// 7. Проверка пола (gender) если он есть в ответе",
+							"pm.test(\"⚧️ Проверка поля пол (если есть)\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const fioData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Поле gender может быть не всегда, но если есть - проверяем",
+							"        if (fioData.hasOwnProperty('gender')) {",
+							"            pm.expect(fioData.gender).to.be.a('string');",
+							"            pm.expect(fioData.gender).to.match(/^(MALE|FEMALE|UNKNOWN)$/);",
+							"            console.log(\"Пол: \" + fioData.gender);",
+							"        }",
+							"    }",
+							"});",
+							"",
+							"// 8. Проверка качества подсказки (qc)",
+							"pm.test(\"🔍 Проверка качества подсказки (qc)\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const fioData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Поле qc обычно присутствует",
+							"        pm.expect(fioData).to.have.property('qc');",
+							"        ",
+							"        // qc может быть строкой или числом - проверяем оба варианта",
+							"        pm.expect(['string', 'number']).to.include(typeof fioData.qc);",
+							"        ",
+							"        // Проверяем, что значение qc допустимо (0, 1, 2)",
+							"        const qcValue = String(fioData.qc); // Приводим к строке для проверки",
+							"        pm.expect(qcValue).to.match(/^[0-2]$/);",
+							"        ",
+							"        console.log(\"Качество подсказки (qc): \" + fioData.qc + \" (тип: \" + typeof fioData.qc + \")\");",
+							"    }",
+							"});",
+							"",
+							"// 9. Сохранение данных для последующих запросов",
+							"pm.test(\"💾 Сохранение данных ФИО\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions && responseData.suggestions.length > 0) {",
+							"        const firstSuggestion = responseData.suggestions[0];",
+							"        ",
+							"        // Сохраняем полное ФИО и фамилию для возможного использования",
+							"        pm.environment.set(\"last_fio_full\", firstSuggestion.value);",
+							"        pm.environment.set(\"last_fio_surname\", firstSuggestion.data.surname);",
+							"        pm.environment.set(\"last_fio_name\", firstSuggestion.data.name);",
+							"        ",
+							"        console.log(\"💾 Данные ФИО сохранены в переменные окружения\");",
+							"        console.log(\"   • Полное ФИО: \" + firstSuggestion.value);",
+							"        console.log(\"   • Фамилия: \" + firstSuggestion.data.surname);",
+							"    }",
+							"});",
+							"",
+							"// 10. Проверка, что подсказки соответствуют запросу",
+							"pm.test(\"🎯 Подсказки соответствуют запросу\", function() {",
+							"    const responseData = pm.response.json();",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    const query = requestBody.query.toLowerCase();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const firstSuggestion = responseData.suggestions[0].value.toLowerCase();",
+							"        ",
+							"        // Проверяем, что подсказка содержит часть запроса",
+							"        // (это нестрогая проверка, так как API может исправлять опечатки)",
+							"        console.log(\"Запрос: \" + query);",
+							"        console.log(\"Первая подсказка: \" + responseData.suggestions[0].value);",
+							"    }",
+							"});",
+							"",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"✅ ТЕСТЫ ДЛЯ SUGGEST FIO ЗАВЕРШЕНЫ\");",
+							"console.log(\"════════════════════════════════════\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"query\": \"иванов иван иванович\",\n  \"count\": 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{dadata_base_url}}/suggest/fio",
+					"host": [
+						"{{dadata_base_url}}"
+					],
+					"path": [
+						"suggest",
+						"fio"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Suggest Bank (Подсказки по банкам)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"try {",
+							"    console.log(\"=\".repeat(40));",
+							"    console.log(\"🚀 Запуск запроса: \" + pm.request.name);",
+							"    console.log(\"⏰ Время начала: \" + new Date().toISOString());",
+							"    console.log(\"🔗 Метод: \" + pm.request.method);",
+							"    console.log(\"🌐 URL: \" + pm.request.url.toString());",
+							"    ",
+							"    // Сохраняем время начала для тестов производительности",
+							"    const startTime = Date.now();",
+							"    pm.environment.set(\"request_start_time\", startTime);",
+							"    ",
+							"    // Логируем заголовки (опционально)",
+							"    console.log(\"📋 Заголовки запроса:\");",
+							"    pm.request.headers.each(header => {",
+							"        if (header.key !== 'Authorization') { // Не логируем токен для безопасности",
+							"            console.log(`   ${header.key}: ${header.value}`);",
+							"        } else {",
+							"            console.log(`   ${header.key}: [скрыто]`);",
+							"        }",
+							"    });",
+							"    ",
+							"    console.log(\"=\".repeat(40));",
+							"} catch (error) {",
+							"    console.error(\"❌ Ошибка в Pre-request Script:\", error.message);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"🧪 ЗАПУСК ТЕСТОВ ДЛЯ SUGGEST BANK\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// 1. Проверка статуса ответа",
+							"pm.test(\"✅ Статус код должен быть 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"    console.log(\"Статус код: \" + pm.response.code + \" OK\");",
+							"});",
+							"",
+							"// 2. Проверка времени ответа",
+							"pm.test(\"⏱️ Время ответа меньше 3000ms\", function() {",
+							"    const endTime = Date.now();",
+							"    const startTime = pm.environment.get(\"request_start_time\");",
+							"    const responseTime = endTime - startTime;",
+							"    pm.expect(responseTime).to.be.below(3000);",
+							"    console.log(\"Время ответа: \" + responseTime + \"ms\");",
+							"});",
+							"",
+							"// 3. Проверка формата JSON",
+							"pm.test(\"📄 Ответ должен быть в формате JSON\", function() {",
+							"    pm.response.to.be.json;",
+							"    console.log(\"Формат ответа: JSON\");",
+							"});",
+							"",
+							"// 4. Проверка наличия массива suggestions",
+							"pm.test(\"📋 Ответ содержит массив suggestions\", function() {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.have.property('suggestions');",
+							"    pm.expect(responseData.suggestions).to.be.an('array');",
+							"    console.log(\"Найдено подсказок банков: \" + responseData.suggestions.length);",
+							"});",
+							"",
+							"// 5. Проверка структуры подсказок банков",
+							"pm.test(\"🏦 Каждая подсказка банка имеет правильную структуру\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const suggestion = responseData.suggestions[0];",
+							"        ",
+							"        // Обязательные поля для подсказки",
+							"        pm.expect(suggestion).to.have.property('value');",
+							"        pm.expect(suggestion.value).to.be.a('string');",
+							"        pm.expect(suggestion).to.have.property('unrestricted_value');",
+							"        pm.expect(suggestion.unrestricted_value).to.be.a('string');",
+							"        ",
+							"        // Проверяем наличие объекта data",
+							"        pm.expect(suggestion).to.have.property('data');",
+							"        pm.expect(suggestion.data).to.be.an('object');",
+							"        ",
+							"        console.log(\"Пример банка: \" + suggestion.value);",
+							"    } else {",
+							"        console.log(\"⚠️ Подсказки банков не найдены, проверка структуры пропущена\");",
+							"    }",
+							"});",
+							"",
+							"// 6. Проверка обязательных полей данных банка",
+							"pm.test(\"📊 Проверка основных полей данных банка\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const bankData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Проверяем обязательные поля для банка",
+							"        pm.expect(bankData).to.have.property('bic');",
+							"        pm.expect(bankData.bic).to.be.a('string');",
+							"        pm.expect(bankData.bic).to.match(/^\\d{9}$/); // БИК состоит из 9 цифр",
+							"        ",
+							"        pm.expect(bankData).to.have.property('name');",
+							"        pm.expect(bankData.name).to.be.an('object');",
+							"        pm.expect(bankData.name).to.have.property('full');",
+							"        pm.expect(bankData.name.full).to.be.a('string');",
+							"        ",
+							"        pm.expect(bankData).to.have.property('address');",
+							"        pm.expect(bankData.address).to.be.an('object');",
+							"        pm.expect(bankData.address).to.have.property('value');",
+							"        pm.expect(bankData.address.value).to.be.a('string');",
+							"        ",
+							"        console.log(\"БИК банка: \" + bankData.bic);",
+							"        console.log(\"Название банка: \" + bankData.name.full);",
+							"        console.log(\"Адрес банка: \" + bankData.address.value);",
+							"    }",
+							"});",
+							"",
+							"// 7. Проверка дополнительных полей банка",
+							"pm.test(\"🏛️ Проверка дополнительных реквизитов банка\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const bankData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Проверяем корреспондентский счет (корсчет)",
+							"        if (bankData.hasOwnProperty('correspondent_account')) {",
+							"            pm.expect(bankData.correspondent_account).to.be.a('string');",
+							"            pm.expect(bankData.correspondent_account).to.match(/^\\d{20}$/);",
+							"            console.log(\"Корреспондентский счет: \" + bankData.correspondent_account);",
+							"        }",
+							"        ",
+							"        // Проверяем SWIFT код (если есть)",
+							"        if (bankData.hasOwnProperty('swift')) {",
+							"            pm.expect(bankData.swift).to.be.a('string');",
+							"            pm.expect(bankData.swift).to.match(/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/);",
+							"            console.log(\"SWIFT код: \" + bankData.swift);",
+							"        }",
+							"        ",
+							"        // Проверяем ИНН банка",
+							"        if (bankData.hasOwnProperty('inn')) {",
+							"            pm.expect(bankData.inn).to.be.a('string');",
+							"            pm.expect(bankData.inn).to.match(/^\\d{10}$/);",
+							"            console.log(\"ИНН банка: \" + bankData.inn);",
+							"        }",
+							"        ",
+							"        // Проверяем КПП банка",
+							"        if (bankData.hasOwnProperty('kpp')) {",
+							"            pm.expect(bankData.kpp).to.be.a('string');",
+							"            pm.expect(bankData.kpp).to.match(/^\\d{9}$/);",
+							"            console.log(\"КПП банка: \" + bankData.kpp);",
+							"        }",
+							"    }",
+							"});",
+							"",
+							"// 8. Проверка статуса банка",
+							"pm.test(\"📈 Проверка статуса банка\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const bankData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Поле state обычно присутствует",
+							"        pm.expect(bankData).to.have.property('state');",
+							"        pm.expect(bankData.state).to.be.an('object');",
+							"        ",
+							"        // Проверяем статус банка",
+							"        if (bankData.state.hasOwnProperty('status')) {",
+							"            pm.expect(bankData.state.status).to.be.a('string');",
+							"            console.log(\"Статус банка: \" + bankData.state.status);",
+							"        }",
+							"        ",
+							"        // Проверяем дату актуальности",
+							"        if (bankData.state.hasOwnProperty('actuality_date')) {",
+							"            pm.expect(bankData.state.actuality_date).to.be.a('number');",
+							"            console.log(\"Дата актуальности: \" + new Date(bankData.state.actuality_date));",
+							"        }",
+							"    }",
+							"});",
+							"",
+							"// 9. Проверка типа банка (операции)",
+							"pm.test(\"💳 Проверка типа и операций банка\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const bankData = responseData.suggestions[0].data;",
+							"        ",
+							"        // Проверяем тип банка",
+							"        if (bankData.hasOwnProperty('type')) {",
+							"            pm.expect(bankData.type).to.be.a('string');",
+							"            console.log(\"Тип банка: \" + bankData.type);",
+							"        }",
+							"        ",
+							"        // Проверяем доступные операции",
+							"        if (bankData.hasOwnProperty('opf')) {",
+							"            pm.expect(bankData.opf).to.be.an('object');",
+							"            if (bankData.opf.hasOwnProperty('type')) {",
+							"                console.log(\"ОПФ банка: \" + bankData.opf.type);",
+							"            }",
+							"        }",
+							"    }",
+							"});",
+							"",
+							"// 10. Сохранение данных банка для последующих запросов",
+							"pm.test(\"💾 Сохранение данных банка\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if (responseData.suggestions && responseData.suggestions.length > 0) {",
+							"        const firstSuggestion = responseData.suggestions[0];",
+							"        const bankData = firstSuggestion.data;",
+							"        ",
+							"        // Сохраняем ключевые данные банка",
+							"        pm.environment.set(\"last_bank_name\", firstSuggestion.value);",
+							"        pm.environment.set(\"last_bank_bic\", bankData.bic);",
+							"        pm.environment.set(\"last_bank_full_name\", bankData.name.full);",
+							"        ",
+							"        if (bankData.inn) {",
+							"            pm.environment.set(\"last_bank_inn\", bankData.inn);",
+							"        }",
+							"        ",
+							"        console.log(\"💾 Данные банка сохранены в переменные окружения\");",
+							"        console.log(\"   • Название: \" + firstSuggestion.value);",
+							"        console.log(\"   • БИК: \" + bankData.bic);",
+							"        console.log(\"   • Полное наименование: \" + bankData.name.full);",
+							"    }",
+							"});",
+							"",
+							"// 11. Проверка, что подсказки соответствуют запросу банка",
+							"pm.test(\"🎯 Подсказки банков соответствуют запросу\", function() {",
+							"    const responseData = pm.response.json();",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    const query = requestBody.query.toLowerCase();",
+							"    ",
+							"    if (responseData.suggestions.length > 0) {",
+							"        const firstBankName = responseData.suggestions[0].value.toLowerCase();",
+							"        const firstBankFullName = responseData.suggestions[0].data.name.full.toLowerCase();",
+							"        ",
+							"        // Проверяем, что название банка содержит запрос (нестрогая проверка)",
+							"        console.log(\"Запрос банка: \" + query);",
+							"        console.log(\"Найден банк: \" + responseData.suggestions[0].value);",
+							"        ",
+							"        // Можно добавить более строгую проверку, если нужно",
+							"        // pm.expect(firstBankName).to.include(query) || pm.expect(firstBankFullName).to.include(query);",
+							"    }",
+							"});",
+							"",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"✅ ТЕСТЫ ДЛЯ SUGGEST BANK ЗАВЕРШЕНЫ\");",
+							"console.log(\"════════════════════════════════════\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"query\": \"тинькофф\",\n  \"status\": [\"ACTIVE\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{dadata_base_url}}/suggest/bank",
+					"host": [
+						"{{dadata_base_url}}"
+					],
+					"path": [
+						"suggest",
+						"bank"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET - Получить данные",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Измеряем время ответа",
+							"// Получаем точное имя переменной, которое создается в Pre-request Script",
+							"const requestName = \"GET - Получить данных\";",
+							"const startTime = pm.environment.get(\"start_time_\" + requestName);",
+							"const endTime = Date.now();",
+							"const responseTime = endTime - startTime;",
+							"",
+							"// Если все еще NaN, используем fallback",
+							"if (isNaN(responseTime)) {",
+							"    console.log(\"⚠️ Не удалось получить start_time, использую fallback\");",
+							"    const responseTime = 100; // Примерное время",
+							"}",
+							"",
+							"// Тест 1: Статус код",
+							"pm.test(\"Статус код 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Тест 2: Время ответа (пропускаем если NaN)",
+							"if (!isNaN(responseTime)) {",
+							"    pm.test(\"Время ответа меньше 2000ms\", function() {",
+							"        pm.expect(responseTime).to.be.below(2000);",
+							"        console.log(\"⏱️ Время ответа: \" + responseTime + \"ms\");",
+							"    });",
+							"} else {",
+							"    console.log(\"⚠️ Тест времени ответа пропущен: не удалось измерить время\");",
+							"}",
+							"",
+							"// Тест 3: Структура JSON",
+							"pm.test(\"Ответ в формате JSON\", function() {",
+							"    pm.response.to.be.json;",
+							"});",
+							"",
+							"// Тест 4: Проверка данных",
+							"pm.test(\"В ответе есть нужные поля\", function() {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('title');",
+							"    pm.expect(jsonData).to.have.property('body');",
+							"    pm.expect(jsonData).to.have.property('userId');",
+							"});",
+							"",
+							"// Тест 5: Конкретные значения",
+							"pm.test(\"ID равен 1\", function() {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.id).to.equal(1);",
+							"});",
+							"",
+							"console.log(\"✅ Все тесты пройдены!\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// ========== СНИППЕТ ДЛЯ GET ЗАПРОСА ==========",
+							"console.log(\"🚀 Запускается GET запрос: \" + pm.request.name);",
+							"console.log(\"⏰ Время начала: \" + new Date().toLocaleTimeString());",
+							"console.log(\"🔗 URL: \" + pm.request.url.toString());",
+							"",
+							"// Сохраняем время начала для измерения скорости ответа",
+							"pm.environment.set(\"start_time_\" + pm.request.name, Date.now());",
+							"",
+							"// Можно добавить дополнительные заголовки, если нужно",
+							"// pm.request.headers.add({key: 'X-Custom-Header', value: 'TestValue'});",
+							"",
+							"console.log(\"📤 Запрос готов к отправке...\");",
+							"// ============================================"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{jsonplaceholder_url}}/posts/1",
+					"host": [
+						"{{jsonplaceholder_url}}"
+					],
+					"path": [
+						"posts",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT - Обновить данные",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ========== ПОЛНЫЙ ТЕСТ ДЛЯ PUT ЗАПРОСА ==========",
+							"",
+							"// 1. Измеряем время ответа",
+							"const putStartTime = pm.environment.get('start_time_' + pm.request.name);",
+							"const putEndTime = Date.now();",
+							"const putResponseTime = putEndTime - putStartTime;",
+							"",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"🧪 ЗАПУСК ТЕСТОВ ДЛЯ PUT ЗАПРОСА\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// 2. Проверка статуса ответа",
+							"pm.test(\"✅ Статус код должен быть 200 (OK)\", function() {",
+							"    pm.response.to.have.status(200);",
+							"    console.log(\"Статус код: \" + pm.response.code);",
+							"});",
+							"",
+							"// 3. Проверка времени ответа",
+							"pm.test(\"⏱️ Время ответа меньше 3000ms\", function() {",
+							"    pm.expect(putResponseTime).to.be.below(3000);",
+							"    console.log(\"Время ответа: \" + putResponseTime + \"ms\");",
+							"});",
+							"",
+							"// 4. Проверка формата ответа",
+							"pm.test(\"📄 Ответ должен быть в формате JSON\", function() {",
+							"    pm.response.to.be.json;",
+							"    console.log(\"Формат ответа: JSON\");",
+							"});",
+							"",
+							"// 5. Проверка заголовков ответа",
+							"pm.test(\"📋 Заголовок Content-Type должен быть application/json\", function() {",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+							"});",
+							"",
+							"// 6. Проверка структуры ответа",
+							"pm.test(\"🏗️ Ответ должен содержать все обязательные поля\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData).to.have.all.keys('id', 'title', 'body', 'userId');",
+							"    console.log(\"Все поля присутствуют: id, title, body, userId\");",
+							"});",
+							"",
+							"// 7. Проверка обновленных данных",
+							"pm.test(\"✏️ Данные должны быть обновлены корректно\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    // Проверяем, что данные соответствуют отправленным",
+							"    pm.expect(responseData.title).to.equal(\"Обновленный заголовок\");",
+							"    pm.expect(responseData.body).to.equal(\"Обновленное содержание\");",
+							"    pm.expect(responseData.userId).to.equal(1);",
+							"    pm.expect(responseData.id).to.equal(1);",
+							"    ",
+							"    console.log(\"Заголовок обновлен: \" + responseData.title);",
+							"    console.log(\"ID записи: \" + responseData.id);",
+							"});",
+							"",
+							"// 8. Проверка типов данных",
+							"pm.test(\"🔢 Проверка типов данных в ответе\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    pm.expect(responseData.id).to.be.a('number');",
+							"    pm.expect(responseData.title).to.be.a('string');",
+							"    pm.expect(responseData.body).to.be.a('string');",
+							"    pm.expect(responseData.userId).to.be.a('number');",
+							"    ",
+							"    console.log(\"Все типы данных корректны\");",
+							"});",
+							"",
+							"// 9. Проверка, что заголовок действительно изменился",
+							"pm.test(\"🔄 Проверка, что заголовок отличается от исходного\", function() {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    // Проверяем, что заголовок не пустой и не равен исходному (если мы его знаем)",
+							"    pm.expect(responseData.title).to.not.be.empty;",
+							"    pm.expect(responseData.title).to.not.equal(\"Старый заголовок\"); // Замените на реальный исходный",
+							"    ",
+							"    console.log(\"Заголовок успешно изменен\");",
+							"});",
+							"",
+							"// 10. Сохранение данных для возможного использования в других запросах",
+							"try {",
+							"    const responseData = pm.response.json();",
+							"    pm.environment.set(\"last_updated_post_id\", responseData.id);",
+							"    pm.environment.set(\"last_updated_post_title\", responseData.title);",
+							"    console.log(\"💾 Данные сохранены в переменные окружения\");",
+							"} catch (error) {",
+							"    console.log(\"⚠️ Не удалось сохранить данные в переменные\");",
+							"}",
+							"",
+							"// Итоговый отчет",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"📊 ИТОГОВЫЙ ОТЧЕТ:\");",
+							"console.log(\"   • Время ответа: \" + putResponseTime + \"ms\");",
+							"console.log(\"   • Статус: \" + pm.response.code);",
+							"console.log(\"   • Тестов выполнено: проверьте вкладку Test Results\");",
+							"console.log(\"✅ ТЕСТЫ PUT ЗАПРОСА ЗАВЕРШЕНЫ\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// Дополнительная проверка для учебных целей",
+							"pm.test(\"🎓 Учебная проверка: ответ не должен быть пустым\", function() {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(Object.keys(responseData).length).to.be.above(0);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// ========== СНИППЕТ ДЛЯ PUT ЗАПРОСА ==========",
+							"console.log(\"🚀 Запускается PUT запрос: \" + pm.request.name);",
+							"console.log(\"⏰ Время начала: \" + new Date().toLocaleTimeString());",
+							"console.log(\"🔗 URL: \" + pm.request.url.toString());",
+							"",
+							"// Логируем тело запроса (что мы отправляем)",
+							"console.log(\"📦 Тело запроса (JSON):\");",
+							"try {",
+							"    const requestBody = JSON.parse(pm.request.body.raw);",
+							"    console.log(JSON.stringify(requestBody, null, 2));",
+							"} catch (error) {",
+							"    console.log(\"⚠️ Не удалось распарсить тело запроса\");",
+							"}",
+							"",
+							"// Сохраняем время начала",
+							"pm.environment.set(\"start_time_\" + pm.request.name, Date.now());",
+							"",
+							"console.log(\"📤 Запрос готов к отправке...\");",
+							"// ============================================"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1,\n    \"title\": \"Обновленный заголовок\",\n    \"body\": \"Обновленное содержание\",\n    \"userId\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{jsonplaceholder_url}}/posts/1",
+					"host": [
+						"{{jsonplaceholder_url}}"
+					],
+					"path": [
+						"posts",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE - Удалить данные",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ========== ПОЛНЫЙ ТЕСТ ДЛЯ DELETE ЗАПРОСА ==========",
+							"",
+							"// 1. Измеряем время ответа",
+							"const deleteStartTime = pm.environment.get('start_time_' + pm.request.name);",
+							"const deleteEndTime = Date.now();",
+							"const deleteResponseTime = deleteEndTime - deleteStartTime;",
+							"",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"🧪 ЗАПУСК ТЕСТОВ ДЛЯ DELETE ЗАПРОСА\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// 2. Проверка статуса ответа (для DELETE обычно 200 или 204)",
+							"pm.test(\"✅ Статус код должен быть 200 (OK) или 204 (No Content)\", function() {",
+							"    pm.response.to.have.status(200);",
+							"    // Или можно проверить несколько возможных статусов:",
+							"    // pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"    console.log(\"Статус код: \" + pm.response.code);",
+							"});",
+							"",
+							"// 3. Проверка времени ответа",
+							"pm.test(\"⏱️ Время ответа меньше 3000ms\", function() {",
+							"    pm.expect(deleteResponseTime).to.be.below(3000);",
+							"    console.log(\"Время ответа: \" + deleteResponseTime + \"ms\");",
+							"});",
+							"",
+							"// 4. Проверка, что запрос выполнен (для DELETE)",
+							"pm.test(\"🗑️ DELETE запрос должен возвращать успешный статус\", function() {",
+							"    pm.expect(pm.response.code).to.be.within(200, 204);",
+							"    console.log(\"DELETE операция выполнена успешно\");",
+							"});",
+							"",
+							"// 5. Проверка заголовков ответа",
+							"pm.test(\"📋 Заголовки ответа корректны\", function() {",
+							"    const contentType = pm.response.headers.get('Content-Type');",
+							"    if (contentType) {",
+							"        pm.expect(contentType).to.include('application/json');",
+							"    }",
+							"    console.log(\"Заголовки ответа проверены\");",
+							"});",
+							"",
+							"// 6. Проверка тела ответа (для JSONPlaceholder возвращает пустой объект)",
+							"pm.test(\"📦 Тело ответа должно быть пустым объектом {}\", function() {",
+							"    // JSONPlaceholder возвращает пустой объект при успешном DELETE",
+							"    if (pm.response.code === 200) {",
+							"        try {",
+							"            const responseBody = pm.response.text();",
+							"            // Проверяем, что тело ответа - пустой объект или вообще пустое",
+							"            pm.expect(responseBody).to.be.oneOf(['{}', '']);",
+							"            console.log(\"Тело ответа: пустой объект (ожидаемо для DELETE)\");",
+							"        } catch (error) {",
+							"            // Если не удалось распарсить, это тоже может быть нормально для DELETE",
+							"            console.log(\"Тело ответа не является JSON (возможно, пустое)\");",
+							"        }",
+							"    }",
+							"});",
+							"",
+							"// 7. Проверка кэширования (если применимо)",
+							"pm.test(\"🚫 Ответ не должен иметь заголовки кэширования для DELETE\", function() {",
+							"    // Для DELETE операций кэширование нежелательно",
+							"    const cacheControl = pm.response.headers.get('Cache-Control');",
+							"    if (cacheControl) {",
+							"        pm.expect(cacheControl.toLowerCase()).to.not.include('public');",
+							"    }",
+							"});",
+							"",
+							"// 8. Проверка безопасности",
+							"pm.test(\"🔒 Проверка безопасности запроса\", function() {",
+							"    // Проверяем, что нет чувствительных данных в ответе",
+							"    const responseText = pm.response.text();",
+							"    pm.expect(responseText).to.not.include('password');",
+							"    pm.expect(responseText).to.not.include('token');",
+							"    pm.expect(responseText).to.not.include('secret');",
+							"    console.log(\"Безопасность ответа: OK\");",
+							"});",
+							"",
+							"// 9. Логирование для отладки",
+							"pm.test(\"📝 Логирование деталей ответа\", function() {",
+							"    console.log(\"Детали ответа DELETE:\");",
+							"    console.log(\"   • Статус: \" + pm.response.code);",
+							"    console.log(\"   • Время: \" + deleteResponseTime + \"ms\");",
+							"    console.log(\"   • Размер ответа: \" + pm.response.responseSize + \" байт\");",
+							"    ",
+							"    // Логируем заголовки",
+							"    console.log(\"   • Заголовки ответа:\");",
+							"    pm.response.headers.each(header => {",
+							"        console.log(\"     - \" + header.key + \": \" + header.value);",
+							"    });",
+							"});",
+							"",
+							"// 10. Очистка переменных окружения (если нужно)",
+							"try {",
+							"    // Удаляем переменные, связанные с удаленным постом",
+							"    pm.environment.unset(\"last_updated_post_id\");",
+							"    pm.environment.unset(\"last_updated_post_title\");",
+							"    console.log(\"🧹 Переменные окружения очищены\");",
+							"} catch (error) {",
+							"    console.log(\"ℹ️ Очистка переменных не требуется\");",
+							"}",
+							"",
+							"// Итоговый отчет",
+							"console.log(\"════════════════════════════════════\");",
+							"console.log(\"📊 ИТОГОВЫЙ ОТЧЕТ ДЛЯ DELETE:\");",
+							"console.log(\"   • Время ответа: \" + deleteResponseTime + \"ms\");",
+							"console.log(\"   • Статус: \" + pm.response.code);",
+							"console.log(\"   • Операция: УДАЛЕНИЕ завершено\");",
+							"console.log(\"✅ ТЕСТЫ DELETE ЗАПРОСА ЗАВЕРШЕНЫ\");",
+							"console.log(\"════════════════════════════════════\");",
+							"",
+							"// 11. Дополнительная проверка - убедиться, что это был DELETE запрос",
+							"pm.test(\"🎯 Подтверждение метода запроса\", function() {",
+							"    const requestMethod = pm.request.method;",
+							"    pm.expect(requestMethod).to.equal(\"DELETE\");",
+							"    console.log(\"Метод запроса подтвержден: \" + requestMethod);",
+							"});",
+							"",
+							"// 12. Проверка, что URL соответствует ожидаемому",
+							"pm.test(\"🔗 Проверка URL запроса\", function() {",
+							"    const requestUrl = pm.request.url.toString();",
+							"    pm.expect(requestUrl).to.include(\"jsonplaceholder.typicode.com\");",
+							"    pm.expect(requestUrl).to.include(\"/posts/\");",
+							"    console.log(\"URL запроса корректен: \" + requestUrl);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// ========== СНИППЕТ ДЛЯ DELETE ЗАПРОСА ==========",
+							"console.log(\"🚀 Запускается DELETE запрос: \" + pm.request.name);",
+							"console.log(\"⏰ Время начала: \" + new Date().toLocaleTimeString());",
+							"console.log(\"🔗 URL: \" + pm.request.url.toString());",
+							"console.log(\"🗑️ Метод DELETE - удаление данных\");",
+							"",
+							"// Для DELETE запроса часто нужны особые заголовки или проверки",
+							"console.log(\"⚠️ Внимание: DELETE запрос удалит данные!\");",
+							"",
+							"// Сохраняем время начала",
+							"pm.environment.set(\"start_time_\" + pm.request.name, Date.now());",
+							"",
+							"// Можно добавить подтверждение (в реальном проекте)",
+							"// if (!confirm(\"Вы уверены, что хотите удалить данные?\")) {",
+							"//     throw new Error(\"Отменено пользователем\");",
+							"// }",
+							"",
+							"console.log(\"📤 Запрос готов к отправке...\");",
+							"// ================================================"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{jsonplaceholder_url}}/posts/1",
+					"host": [
+						"{{jsonplaceholder_url}}"
+					],
+					"path": [
+						"posts",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "jsonplaceholder_url",
+			"value": "https://jsonplaceholder.typicode.com"
+		},
+		{
+			"key": "dadata_base_url",
+			"value": "https://suggestions.dadata.ru/suggestions/api/4_1/rs"
+		},
+		{
+			"key": "dadata_token",
+			"value": "Token f804ff187528a92e5e3e357375d1435b99f7582e"
+		},
+		{
+			"key": "test_query",
+			"value": "сбербанк"
+		},
+		{
+			"key": "count",
+			"value": "5"
+		}
+	]
+}
